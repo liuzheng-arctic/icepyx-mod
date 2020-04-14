@@ -802,7 +802,7 @@ class Icesat2Data():
     #DEVGOAL: we need to be explicit about our handling of existing variables. Does this function append new paths or replace any previously existing list? I think trying to make it so that it can remove paths would be too much, but the former distinction could easily be done with a boolean flag.
     #DevNote: Question: Does it make more sense to set defaults to False. It is likely default vars are only added once, 
     #                   but fine tunes may take more calls to this function. On the other hand, I'd like the function to return some default results withtout input. 
-    def build_wanted_var_list(self, defaults=True, append=True, inclusive=True,
+    def build_wanted_var_list(self, defaults=True, append=True,clear=False, inclusive=True,
                               var_list=None, beam_list=None, keyword_list=None, ):
         '''
         Build a dictionary of desired variables using user specified beams and variable list. 
@@ -902,7 +902,7 @@ class Icesat2Data():
 
 
         #if the user does not want to append new variables, clear existing ones
-        if append==False:
+        if clear:
             try: self._variables=None
             except NameError:
                 pass
@@ -939,23 +939,32 @@ class Icesat2Data():
             for vkey in sum_varlist:
                 for vpath in vgrp[vkey]:
                     vpath_kws = vpath.split('/')
+
+                    kw_match = False if keyword_list is not None else True
+                    bm_match = False if beam_list is not None else True
                     
                     for kw in vpath_kws[0:-1]:
-                        if (keyword_list is not None and kw in keyword_list) or \
-                        (beam_list is not None and kw in beam_list):
-                            if vkey not in req_vars: req_vars[vkey] = []  
-                            if vpath not in req_vars[vkey]: req_vars[vkey].append(vpath)  
-                            
-        # update the data object variables
+                        if (keyword_list is not None and kw in keyword_list):
+                            kw_match = True
+                        if (beam_list is not None and kw in beam_list):
+                            bm_match = True
+                    if kw_match and bm_match:
+                        if vkey not in req_vars: req_vars[vkey] = [] 
+                        req_vars[vkey].append(vpath)
+                   
+        # update the data object variables     
         for vkey in req_vars.keys():
-            # add all matching keys and paths for new variables
+            # add all matching paths for new variables
             if vkey not in self._variables.keys():
                 self._variables[vkey] = req_vars[vkey]
-            else:
+            elif append:
+                # append new paths for existing variables
+                vpaths = self._variables[vkey]
                 for vpath in req_vars[vkey]:
-                    if vpath not in self._variables[vkey]: self._variables[vkey].append(vpath)
-
-
+                    if vpath not in vpaths: self._variables[vkey].append(vpath)
+            else:
+                # overwrite existing variables with a list of new matching paths
+                self._variables[vkey] = req_vars[vkey]
 
     # ----------------------------------------------------------------------
     # Methods - Interact with NSIDC-API
