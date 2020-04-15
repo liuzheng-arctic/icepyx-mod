@@ -1085,7 +1085,7 @@ class Icesat2Data():
                                                                {k: self.reqparams[k] for k in ('page_size','page_num')}))
 
             results = json.loads(response.content)
-            print(results)
+            #print(results)
             if len(results['feed']['entry']) == 0:
                 # Out of results, so break out of loop
                 break
@@ -1095,7 +1095,7 @@ class Icesat2Data():
             self.reqparams['page_num'] += 1
 
         assert len(self.granules)>0, "Your search returned no results; try different search parameters"
-
+        self.reqparams['page_num'] = int(np.ceil(len(self.granules)/self.reqparams['page_size']))
         return self.granule_info
 
 
@@ -1136,6 +1136,8 @@ class Icesat2Data():
 
         self.build_CMR_params()
         self.build_reqconfig_params('download')
+        #if not hasattr(self,'orderIDs'):
+        self.orderIDs=[]
 
         if subset is False:
             request_params = self.combine_params(self.CMRparams, self.reqparams, {'agent':'NO'})
@@ -1156,8 +1158,10 @@ class Icesat2Data():
 
         granules=self.avail_granules() #this way the reqparams['page_num'] is updated
 
+        #print(request_params['page_num'])
+        #print(request_params)
         # Request data service for each page number, and unzip outputs
-        for i in range(request_params['page_num']):
+        for i in range(self.reqparams['page_num']):
             page_val = i + 1
             if verbose is True:
                 print('Order: ', page_val)
@@ -1247,8 +1251,6 @@ class Icesat2Data():
                 pprint.pprint(messagelist)
 
             if status == 'complete' or status == 'complete_with_errors':
-                if not hasattr(self,'orderIDs'):
-                    self.orderIDs=[]
 
                 self.orderIDs.append(orderID)
             else: print('Request failed.')
