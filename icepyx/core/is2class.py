@@ -1290,7 +1290,7 @@ class Icesat2Data():
         if not os.path.exists(path):
             os.mkdir(path)
 
-        os.chdir(path)
+        #os.chdir(path)
 
         for order in self.orderIDs:
             downloadURL = 'https://n5eil02u.ecs.nsidc.org/esir/' + order + '.zip'
