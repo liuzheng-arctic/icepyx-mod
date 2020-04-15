@@ -802,7 +802,7 @@ class Icesat2Data():
     #DEVGOAL: we need to be explicit about our handling of existing variables. Does this function append new paths or replace any previously existing list? I think trying to make it so that it can remove paths would be too much, but the former distinction could easily be done with a boolean flag.
     #DevNote: Question: Does it make more sense to set defaults to False. It is likely default vars are only added once, 
     #                   but fine tunes may take more calls to this function. On the other hand, I'd like the function to return some default results withtout input. 
-    def build_wanted_var_list(self, defaults=True, append=True,clear=False, inclusive=True,
+    def build_wanted_var_list(self, defaults=True, append=True,clear=False, inclusive=True,remove=False,
                               var_list=None, beam_list=None, keyword_list=None, ):
         '''
         Build a dictionary of desired variables using user specified beams and variable list. 
@@ -952,10 +952,16 @@ class Icesat2Data():
                         if vkey not in req_vars: req_vars[vkey] = [] 
                         req_vars[vkey].append(vpath)
                    
-        # update the data object variables     
+        # update the data object variables    
         for vkey in req_vars.keys():
+            # remove filtered paths
+            if remove:
+                vpaths = self._variables[vkey]
+                for vpath in req_vars[vkey]:
+                    if vpath in vpaths: 
+                        self._variables[vkey].remove(vpath)
             # add all matching paths for new variables
-            if vkey not in self._variables.keys():
+            elif vkey not in self._variables.keys():
                 self._variables[vkey] = req_vars[vkey]
             elif append:
                 # append new paths for existing variables
